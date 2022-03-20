@@ -186,3 +186,79 @@ class ListTestCase(cases.BaseServerTestCase):
             self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
         else:
             assert False, f"{self.controller.software_name} not supported"
+
+    @cases.mark_isupport("ELIST")
+    @cases.mark_specifications("Modern")
+    def testListTopicTime(self):
+        """
+        "T: Searching based on topic time, via the "T<val" and "T>val"
+        modifiers to search for a topic time that is lower or higher than
+        val respectively."
+        -- <https://modern.ircdocs.horse/#elist-parameter>
+        -- https://datatracker.ietf.org/doc/html/draft-hardy-irc-isupport-00#section-4.8
+
+        See testListCreationTime's docstring for comments on this.
+        """
+        self.connectClient("foo")
+
+        if "T" not in self.server_support.get("ELIST", ""):
+            raise runner.OptionalExtensionNotSupported("ELIST=T")
+
+        self.connectClient("bar")
+        self.sendLine(1, "JOIN #chan1")
+        self.sendLine(1, "JOIN #chan2")
+        self.getMessages(1)
+
+        self.sendLine(1, "TOPIC #chan1 :First channel")
+        self.getMessages(1)
+
+        # Helps debugging
+        self.sendLine(1, "TIME")
+        self.getMessages(1)
+
+        self._sleep_minutes(2)
+
+        # Helps debugging
+        self.sendLine(1, "TIME")
+        self.getMessages(1)
+
+        self.sendLine(1, "TOPIC #chan2 :Second channel")
+        self.getMessages(1)
+
+        self._sleep_minutes(1)
+
+        self.sendLine(1, "LIST")
+        self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
+
+        if self.controller.software_name in ("UnrealIRCd", "Plexus4", "Hybrid"):
+            self.sendLine(1, "LIST T>0")
+            self.assertEqual(self._parseChanList(1), set())
+
+            self.sendLine(1, "LIST T<0")
+            self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
+
+            self.sendLine(1, "LIST T<2")
+            self.assertEqual(self._parseChanList(1), {"#chan1"})
+
+            self.sendLine(1, "LIST T>2")
+            self.assertEqual(self._parseChanList(1), {"#chan2"})
+
+            self.sendLine(1, "LIST T>10")
+            self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
+        elif self.controller.software_name in ("Solanum", "Charybdis", "InspIRCd"):
+            self.sendLine(1, "LIST T<0")
+            self.assertEqual(self._parseChanList(1), set())
+
+            self.sendLine(1, "LIST T>0")
+            self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
+
+            self.sendLine(1, "LIST T>2")
+            self.assertEqual(self._parseChanList(1), {"#chan1"})
+
+            self.sendLine(1, "LIST T<2")
+            self.assertEqual(self._parseChanList(1), {"#chan2"})
+
+            self.sendLine(1, "LIST T<10")
+            self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
+        else:
+            assert False, f"{self.controller.software_name} not supported"
