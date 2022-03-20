@@ -5,7 +5,7 @@ from irctest.numerics import RPL_LIST, RPL_LISTEND, RPL_LISTSTART
 
 
 class ListTestCase(cases.BaseServerTestCase):
-    faketime = "+1y x60"  # for every wall clock second, 1 minute passed for the server
+    faketime = "+1y x30"  # for every wall clock second, 1 minute passed for the server
 
     @cases.mark_specifications("RFC1459", "RFC2812")
     def testListEmpty(self):
@@ -99,8 +99,8 @@ class ListTestCase(cases.BaseServerTestCase):
     def _sleep_minutes(self, n):
         for _ in range(n):
             if self.controller.faketime_enabled:
-                # From the server's point of view, 1 minute will pass
-                time.sleep(1)
+                # From the server's point of view, 1 min will pass
+                time.sleep(2)
             else:
                 time.sleep(60)
 
@@ -150,9 +150,6 @@ class ListTestCase(cases.BaseServerTestCase):
         self.getMessages(1)
 
         self._sleep_minutes(1)
-
-        self.sendLine(1, "LIST")
-        self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
 
         if self.controller.software_name in ("UnrealIRCd", "Plexus4", "Hybrid"):
             self.sendLine(2, "LIST C<2")
@@ -229,9 +226,6 @@ class ListTestCase(cases.BaseServerTestCase):
         self.getMessages(1)
 
         self._sleep_minutes(1)
-
-        self.sendLine(1, "LIST")
-        self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
 
         if self.controller.software_name in ("UnrealIRCd",):
             self.sendLine(1, "LIST T<2")
