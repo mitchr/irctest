@@ -96,6 +96,119 @@ class ListTestCase(_BasedListTestCase):
             "or 323 (RPL_LISTEND), or but: {msg}",
         )
 
+    @cases.mark_isupport("ELIST")
+    @cases.mark_specifications("Modern")
+    def testListMask(self):
+        """
+        "M: Searching based on mask."
+        -- <https://modern.ircdocs.horse/#elist-parameter>
+        -- https://datatracker.ietf.org/doc/html/draft-hardy-irc-isupport-00#section-4.8
+        """
+        self.connectClient("foo")
+
+        if "M" not in self.server_support.get("ELIST", ""):
+            raise runner.OptionalExtensionNotSupported("ELIST=M")
+
+        self.connectClient("bar")
+        self.sendLine(1, "JOIN #chan1")
+        self.getMessages(1)
+        self.sendLine(1, "JOIN #chan2")
+        self.getMessages(1)
+
+        self.sendLine(2, "LIST *an1")
+        self.assertEqual(self._parseChanList(2), {"#chan1"})
+
+        self.sendLine(2, "LIST *an2")
+        self.assertEqual(self._parseChanList(2), {"#chan2"})
+
+        self.sendLine(2, "LIST #c*n2")
+        self.assertEqual(self._parseChanList(2), {"#chan2"})
+
+        self.sendLine(2, "LIST *an3")
+        self.assertEqual(self._parseChanList(2), set())
+
+        self.sendLine(2, "LIST #ch*")
+        self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+
+    @cases.mark_isupport("ELIST")
+    @cases.mark_specifications("Modern")
+    def testListNotMask(self):
+        """
+        " N: Searching based on a non-matching mask. i.e., the opposite of M."
+        -- <https://modern.ircdocs.horse/#elist-parameter>
+        -- https://datatracker.ietf.org/doc/html/draft-hardy-irc-isupport-00#section-4.8
+        """
+        self.connectClient("foo")
+
+        if "N" not in self.server_support.get("ELIST", ""):
+            raise runner.OptionalExtensionNotSupported("ELIST=N")
+
+        self.sendLine(1, "JOIN #chan1")
+        self.getMessages(1)
+        self.sendLine(1, "JOIN #chan2")
+        self.getMessages(1)
+
+        self.connectClient("bar")
+
+        self.sendLine(2, "LIST !*an1")
+        self.assertEqual(self._parseChanList(2), {"#chan2"})
+
+        self.sendLine(2, "LIST !*an2")
+        self.assertEqual(self._parseChanList(2), {"#chan1"})
+
+        self.sendLine(2, "LIST !#c*n2")
+        self.assertEqual(self._parseChanList(2), {"#chan1"})
+
+        self.sendLine(2, "LIST !*an3")
+        self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+
+        self.sendLine(2, "LIST !#ch*")
+        self.assertEqual(self._parseChanList(2), set())
+
+    @cases.mark_isupport("ELIST")
+    @cases.mark_specifications("Modern")
+    def testListUsers(self):
+        """
+        "U: Searching based on user count within the channel, via the "<val" and
+        ">val" modifiers to search for a channel that has less or more than val users,
+        respectively."
+        -- <https://modern.ircdocs.horse/#elist-parameter>
+        -- https://datatracker.ietf.org/doc/html/draft-hardy-irc-isupport-00#section-4.8
+        """
+        self.connectClient("foo")
+
+        if "M" not in self.server_support.get("ELIST", ""):
+            raise runner.OptionalExtensionNotSupported("ELIST=M")
+
+        self.sendLine(1, "JOIN #chan1")
+        self.getMessages(1)
+        self.sendLine(1, "JOIN #chan2")
+        self.getMessages(1)
+
+        self.connectClient("bar")
+        self.sendLine(2, "JOIN #chan2")
+        self.getMessages(2)
+
+        self.connectClient("baz")
+
+        self.sendLine(3, "LIST >0")
+        self.assertEqual(self._parseChanList(3), {"#chan1", "#chan2"})
+
+        self.sendLine(3, "LIST <1")
+        self.assertEqual(self._parseChanList(3), set())
+
+        self.sendLine(3, "LIST <100")
+        self.assertEqual(self._parseChanList(3), {"#chan1", "#chan2"})
+
+        self.sendLine(3, "LIST >1")
+        self.assertEqual(self._parseChanList(3), {"#chan2"})
+
+        self.sendLine(3, "LIST <2")
+        self.assertEqual(self._parseChanList(3), {"#chan1"})
+
+        self.sendLine(3, "LIST <100")
+        self.assertEqual(self._parseChanList(3), {"#chan1", "#chan2"})
+
 
 class FaketimeListTestCase(_BasedListTestCase):
     faketime = "+1y x30"  # for every wall clock second, 1 minute passed for the server
