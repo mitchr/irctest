@@ -233,7 +233,7 @@ class ListTestCase(cases.BaseServerTestCase):
         self.sendLine(1, "LIST")
         self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
 
-        if self.controller.software_name in ("UnrealIRCd", "Plexus4", "Hybrid"):
+        if self.controller.software_name in ("UnrealIRCd",):
             self.sendLine(1, "LIST T<2")
             self.assertEqual(self._parseChanList(1), {"#chan1"})
 
@@ -251,7 +251,13 @@ class ListTestCase(cases.BaseServerTestCase):
 
             self.sendLine(1, "LIST T>10")
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
-        elif self.controller.software_name in ("Solanum", "Charybdis", "InspIRCd"):
+        elif self.controller.software_name in (
+            "Solanum",
+            "Charybdis",
+            "InspIRCd",
+            "Plexus4",
+            "Hybrid",
+        ):
             self.sendLine(1, "LIST T>2")
             self.assertEqual(self._parseChanList(1), {"#chan1"})
 
