@@ -179,7 +179,7 @@ class ListTestCase(cases.BaseServerTestCase):
             self.sendLine(2, "LIST C<0")
             self.assertEqual(self._parseChanList(2), set())
 
-            self.sendLine(2, "LIST C<0")
+            self.sendLine(2, "LIST C>0")
             self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
 
             self.sendLine(2, "LIST C>10")
