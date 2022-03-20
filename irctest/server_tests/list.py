@@ -112,9 +112,22 @@ class ListTestCase(cases.BaseServerTestCase):
     @cases.mark_specifications("Modern")
     def testListCreationTime(self):
         """
-        " C: Searching based on channel creation time, via the "C<val" and "C>val" modifiers
-        to search for a channel creation time that is higher or lower than val."
+        " C: Searching based on channel creation time, via the "C<val" and "C>val"
+        modifiers to search for a channel creation time that is higher or lower
+        than val."
         -- <https://modern.ircdocs.horse/#elist-parameter>
+        -- https://datatracker.ietf.org/doc/html/draft-hardy-irc-isupport-00#section-4.8
+
+        Unfortunately, this is ambiguous, because "val" is a time delta (in minutes),
+        not a timestamp.
+
+        On InspIRCd and Charybdis/Solanum, "C<val" is interpreted as "the channel was
+        created less than <val> minutes ago
+
+        On UnrealIRCd, Plexus, and Hybrid, it is interpreted as "the channel's creation
+        time is a timestamp lower than <val> minutes ago" (ie. the exact opposite)
+
+        Here, we choose the second interpretation (completely arbitrarily).
         """
         self.connectClient("foo")
 
@@ -138,14 +151,16 @@ class ListTestCase(cases.BaseServerTestCase):
         self.sendLine(1, "JOIN #chan2")
         self.getMessages(1)
 
-        self.sendLine(2, "LIST C<1")
-        self.assertEqual(self._parseChanList(2), {"#chan2"})
+        self._sleep_minutes(1)
 
-        self.sendLine(2, "LIST C>1")
+        self.sendLine(2, "LIST C<2")
         self.assertEqual(self._parseChanList(2), {"#chan1"})
 
+        self.sendLine(2, "LIST C>2")
+        self.assertEqual(self._parseChanList(2), {"#chan2"})
+
         self.sendLine(2, "LIST C>0")
-        self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+        self.assertEqual(self._parseChanList(2), set())
 
         self.sendLine(2, "LIST C>10")
-        self.assertEqual(self._parseChanList(2), set())
+        self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
