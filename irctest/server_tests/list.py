@@ -182,7 +182,7 @@ class ListTestCase(cases.BaseServerTestCase):
             self.sendLine(2, "LIST C>0")
             self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
 
-            self.sendLine(2, "LIST C>10")
+            self.sendLine(2, "LIST C<10")
             self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
         else:
             assert False, f"{self.controller.software_name} not supported"
@@ -232,7 +232,10 @@ class ListTestCase(cases.BaseServerTestCase):
 
         if self.controller.software_name in ("UnrealIRCd", "Plexus4", "Hybrid"):
             self.sendLine(1, "LIST T>0")
-            self.assertEqual(self._parseChanList(1), set())
+            if self.controller.software_name == "Hybrid":
+                self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
+            else:
+                self.assertEqual(self._parseChanList(1), set())
 
             self.sendLine(1, "LIST T<0")
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
@@ -247,7 +250,11 @@ class ListTestCase(cases.BaseServerTestCase):
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
         elif self.controller.software_name in ("Solanum", "Charybdis", "InspIRCd"):
             self.sendLine(1, "LIST T<0")
-            self.assertEqual(self._parseChanList(1), set())
+            if self.controller.software_name == "InspIRCd":
+                # Insp internally represents "LIST T>0" like "LIST"
+                self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
+            else:
+                self.assertEqual(self._parseChanList(1), set())
 
             self.sendLine(1, "LIST T>0")
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
