@@ -1,8 +1,12 @@
-from irctest import cases
+import time
+
+from irctest import cases, runner
 from irctest.numerics import RPL_LIST, RPL_LISTEND, RPL_LISTSTART
 
 
 class ListTestCase(cases.BaseServerTestCase):
+    faketime = "+1y x60"  # for every wall clock second, 1 minute passed for the server
+
     @cases.mark_specifications("RFC1459", "RFC2812")
     def testListEmpty(self):
         """<https://tools.ietf.org/html/rfc1459#section-4.2.6>
@@ -77,3 +81,71 @@ class ListTestCase(cases.BaseServerTestCase):
             fail_msg="Third reply to LIST is not 322 (RPL_LIST) "
             "or 323 (RPL_LISTEND), or but: {msg}",
         )
+
+    def _parseChanList(self, client):
+        channels = set()
+        while True:
+            m = self.getMessage(client)
+            if m.command == RPL_LISTEND:
+                break
+            if m.command == RPL_LIST:
+                if m.params[1].startswith("&"):
+                    # skip local pseudo-channels listed by ngircd and ircu
+                    continue
+                channels.add(m.params[1])
+
+        return channels
+
+    def _sleep_minutes(self, n):
+        for _ in range(n):
+            if self.controller.faketime_enabled:
+                # From the server's point of view, 1 minute will pass
+                time.sleep(1)
+            else:
+                time.sleep(60)
+
+            # reply to pings
+            self.getMessages(1)
+            self.getMessages(2)
+
+    @cases.mark_isupport("ELIST")
+    @cases.mark_specifications("Modern")
+    def testListCreationTime(self):
+        """
+        " C: Searching based on channel creation time, via the "C<val" and "C>val" modifiers
+        to search for a channel creation time that is higher or lower than val."
+        -- <https://modern.ircdocs.horse/#elist-parameter>
+        """
+        self.connectClient("foo")
+
+        if "C" not in self.server_support.get("ELIST", ""):
+            raise runner.OptionalExtensionNotSupported("ELIST=C")
+
+        self.connectClient("bar")
+        self.sendLine(1, "JOIN #chan1")
+        self.getMessages(1)
+
+        # Helps debugging
+        self.sendLine(1, "TIME")
+        self.getMessages(1)
+
+        self._sleep_minutes(2)
+
+        # Helps debugging
+        self.sendLine(1, "TIME")
+        self.getMessages(1)
+
+        self.sendLine(1, "JOIN #chan2")
+        self.getMessages(1)
+
+        self.sendLine(2, "LIST C<1")
+        self.assertEqual(self._parseChanList(2), {"#chan2"})
+
+        self.sendLine(2, "LIST C>1")
+        self.assertEqual(self._parseChanList(2), {"#chan1"})
+
+        self.sendLine(2, "LIST C>0")
+        self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+
+        self.sendLine(2, "LIST C>10")
+        self.assertEqual(self._parseChanList(2), set())
