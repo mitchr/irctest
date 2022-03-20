@@ -231,6 +231,12 @@ class ListTestCase(cases.BaseServerTestCase):
         self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
 
         if self.controller.software_name in ("UnrealIRCd", "Plexus4", "Hybrid"):
+            self.sendLine(1, "LIST T<2")
+            self.assertEqual(self._parseChanList(1), {"#chan1"})
+
+            self.sendLine(1, "LIST T>2")
+            self.assertEqual(self._parseChanList(1), {"#chan2"})
+
             self.sendLine(1, "LIST T>0")
             if self.controller.software_name == "Hybrid":
                 self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
@@ -240,15 +246,15 @@ class ListTestCase(cases.BaseServerTestCase):
             self.sendLine(1, "LIST T<0")
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
 
-            self.sendLine(1, "LIST T<2")
-            self.assertEqual(self._parseChanList(1), {"#chan1"})
-
-            self.sendLine(1, "LIST T>2")
-            self.assertEqual(self._parseChanList(1), {"#chan2"})
-
             self.sendLine(1, "LIST T>10")
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
         elif self.controller.software_name in ("Solanum", "Charybdis", "InspIRCd"):
+            self.sendLine(1, "LIST T>2")
+            self.assertEqual(self._parseChanList(1), {"#chan1"})
+
+            self.sendLine(1, "LIST T<2")
+            self.assertEqual(self._parseChanList(1), {"#chan2"})
+
             self.sendLine(1, "LIST T<0")
             if self.controller.software_name == "InspIRCd":
                 # Insp internally represents "LIST T>0" like "LIST"
@@ -258,12 +264,6 @@ class ListTestCase(cases.BaseServerTestCase):
 
             self.sendLine(1, "LIST T>0")
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
-
-            self.sendLine(1, "LIST T>2")
-            self.assertEqual(self._parseChanList(1), {"#chan1"})
-
-            self.sendLine(1, "LIST T<2")
-            self.assertEqual(self._parseChanList(1), {"#chan2"})
 
             self.sendLine(1, "LIST T<10")
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
