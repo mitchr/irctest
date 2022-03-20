@@ -4,9 +4,23 @@ from irctest import cases, runner
 from irctest.numerics import RPL_LIST, RPL_LISTEND, RPL_LISTSTART
 
 
-class ListTestCase(cases.BaseServerTestCase):
-    faketime = "+1y x30"  # for every wall clock second, 1 minute passed for the server
+class _BasedListTestCase(cases.BaseServerTestCase):
+    def _parseChanList(self, client):
+        channels = set()
+        while True:
+            m = self.getMessage(client)
+            if m.command == RPL_LISTEND:
+                break
+            if m.command == RPL_LIST:
+                if m.params[1].startswith("&"):
+                    # skip local pseudo-channels listed by ngircd and ircu
+                    continue
+                channels.add(m.params[1])
 
+        return channels
+
+
+class ListTestCase(_BasedListTestCase):
     @cases.mark_specifications("RFC1459", "RFC2812")
     def testListEmpty(self):
         """<https://tools.ietf.org/html/rfc1459#section-4.2.6>
@@ -82,19 +96,9 @@ class ListTestCase(cases.BaseServerTestCase):
             "or 323 (RPL_LISTEND), or but: {msg}",
         )
 
-    def _parseChanList(self, client):
-        channels = set()
-        while True:
-            m = self.getMessage(client)
-            if m.command == RPL_LISTEND:
-                break
-            if m.command == RPL_LIST:
-                if m.params[1].startswith("&"):
-                    # skip local pseudo-channels listed by ngircd and ircu
-                    continue
-                channels.add(m.params[1])
 
-        return channels
+class FaketimeListTestCase(_BasedListTestCase):
+    faketime = "+1y x30"  # for every wall clock second, 1 minute passed for the server
 
     def _sleep_minutes(self, n):
         for _ in range(n):
