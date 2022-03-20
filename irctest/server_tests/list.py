@@ -126,8 +126,6 @@ class ListTestCase(cases.BaseServerTestCase):
 
         On UnrealIRCd, Plexus, and Hybrid, it is interpreted as "the channel's creation
         time is a timestamp lower than <val> minutes ago" (ie. the exact opposite)
-
-        Here, we choose the second interpretation (completely arbitrarily).
         """
         self.connectClient("foo")
 
@@ -153,14 +151,38 @@ class ListTestCase(cases.BaseServerTestCase):
 
         self._sleep_minutes(1)
 
-        self.sendLine(2, "LIST C<2")
-        self.assertEqual(self._parseChanList(2), {"#chan1"})
+        self.sendLine(1, "LIST")
+        self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
 
-        self.sendLine(2, "LIST C>2")
-        self.assertEqual(self._parseChanList(2), {"#chan2"})
+        if self.controller.software_name in ("UnrealIRCd", "Plexus4", "Hybrid"):
+            self.sendLine(2, "LIST C<2")
+            self.assertEqual(self._parseChanList(2), {"#chan1"})
 
-        self.sendLine(2, "LIST C>0")
-        self.assertEqual(self._parseChanList(2), set())
+            self.sendLine(2, "LIST C>2")
+            self.assertEqual(self._parseChanList(2), {"#chan2"})
 
-        self.sendLine(2, "LIST C>10")
-        self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+            self.sendLine(2, "LIST C>0")
+            self.assertEqual(self._parseChanList(2), set())
+
+            self.sendLine(2, "LIST C<0")
+            self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+
+            self.sendLine(2, "LIST C>10")
+            self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+        elif self.controller.software_name in ("Solanum", "Charybdis", "InspIRCd"):
+            self.sendLine(2, "LIST C>2")
+            self.assertEqual(self._parseChanList(2), {"#chan1"})
+
+            self.sendLine(2, "LIST C<2")
+            self.assertEqual(self._parseChanList(2), {"#chan2"})
+
+            self.sendLine(2, "LIST C<0")
+            self.assertEqual(self._parseChanList(2), set())
+
+            self.sendLine(2, "LIST C<0")
+            self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+
+            self.sendLine(2, "LIST C>10")
+            self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+        else:
+            assert False, f"{self.controller.software_name} not supported"
