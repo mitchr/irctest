@@ -241,10 +241,7 @@ class ListTestCase(cases.BaseServerTestCase):
             self.assertEqual(self._parseChanList(1), {"#chan2"})
 
             self.sendLine(1, "LIST T>0")
-            if self.controller.software_name == "Hybrid":
-                self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
-            else:
-                self.assertEqual(self._parseChanList(1), set())
+            self.assertEqual(self._parseChanList(1), set())
 
             self.sendLine(1, "LIST T<0")
             self.assertEqual(self._parseChanList(1), {"#chan1", "#chan2"})
