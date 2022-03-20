@@ -177,7 +177,10 @@ class ListTestCase(cases.BaseServerTestCase):
             self.assertEqual(self._parseChanList(2), {"#chan2"})
 
             self.sendLine(2, "LIST C<0")
-            self.assertEqual(self._parseChanList(2), set())
+            if self.controller.software_name == "InspIRCd":
+                self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
+            else:
+                self.assertEqual(self._parseChanList(2), set())
 
             self.sendLine(2, "LIST C>0")
             self.assertEqual(self._parseChanList(2), {"#chan1", "#chan2"})
