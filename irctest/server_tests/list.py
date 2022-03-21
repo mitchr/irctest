@@ -243,6 +243,11 @@ class FaketimeListTestCase(_BasedListTestCase):
 
         On UnrealIRCd, Plexus, and Hybrid, it is interpreted as "the channel's creation
         time is a timestamp lower than <val> minutes ago" (ie. the exact opposite)
+
+        "C: Searching based on channel creation time, via the "C<val" and "C>val"
+        modifiers to search for a channel that was created either less than `val`
+        minutes ago, or more than `val` minutes ago, respectively"
+        -- https://github.com/ircdocs/modern-irc/pull/171
         """
         self.connectClient("foo")
 
@@ -315,6 +320,11 @@ class FaketimeListTestCase(_BasedListTestCase):
         -- https://datatracker.ietf.org/doc/html/draft-hardy-irc-isupport-00#section-4.8
 
         See testListCreationTime's docstring for comments on this.
+
+        "T: Searching based on topic set time, via the "T<val" and "T>val" modifiers
+        to search for a topic time that was set less than `val` minutes ago, or more
+        than `val` minutes ago, respectively."
+        -- https://github.com/ircdocs/modern-irc/pull/171
         """
         self.connectClient("foo")
 
