@@ -14,7 +14,7 @@ from irctest.cases import BaseServerTestCase
 
 BASE_CONFIG = {
 	"network": "cafeteria",
-	"name": "gossip",
+	"name": "My.Little.Server",
 	"port": ":6667",
 	"tls": {
 		"enabled": False,
