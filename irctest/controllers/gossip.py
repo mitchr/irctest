@@ -142,9 +142,9 @@ class GossipController(BaseServerController, DirectoryBasedController):
             pass
         case.getMessages(client)
         assert password
-        case.sendLine(client, "NS REGISTER " + password)
+        case.sendLine(client, "REGISTER PASS " + password)
         msg = case.getMessage(client)
-        assert msg.params == [username, "Account created"]
+        assert msg.params == ["Registered"]
         case.sendLine(client, "QUIT")
         case.assertDisconnected(client)
 
