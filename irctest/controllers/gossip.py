@@ -92,8 +92,9 @@ class GossipController(BaseServerController, DirectoryBasedController):
         if ssl:
             self.key_path = os.path.join(self.directory, "ssl.key")
             self.pem_path = os.path.join(self.directory, "ssl.pem")
-            listener_conf = {"tls": {"cert": self.pem_path, "key": self.key_path}}
-        # config["server"]["listeners"][bind_address] = listener_conf  # type: ignore
+            config["tls"]["enabled"] = True
+            config["tls"]["pubkey"] = self.pem_path
+            config["tls"]["privkey"] = self.key_path
 
         # config["datastore"]["path"] = os.path.join(  # type: ignore
         #     self.directory, "ircd.db"
