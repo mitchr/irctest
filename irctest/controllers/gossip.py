@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+import shutil
 import subprocess
 from typing import Any, Dict, Optional, Set, Type, Union
 
@@ -69,6 +70,7 @@ class GossipController(BaseServerController, DirectoryBasedController):
         valid_metadata_keys: Optional[Set[str]] = None,
         invalid_metadata_keys: Optional[Set[str]] = None,
         restricted_metadata_keys: Optional[Set[str]] = None,
+        faketime: Optional[str],
         config: Optional[Any] = None,
     ) -> None:
         if valid_metadata_keys or invalid_metadata_keys:
@@ -110,8 +112,14 @@ class GossipController(BaseServerController, DirectoryBasedController):
         self._config = config
         self._write_config()
 
+        if faketime and shutil.which("faketime"):
+            faketime_cmd = ["faketime", "-f", faketime]
+            self.faketime_enabled = True
+        else:
+            faketime_cmd = []
+
         self.proc = subprocess.Popen(
-            ["gossip", "-conf", self._config_path]
+            [*faketime_cmd, "gossip", "-conf", self._config_path]
         )
 
     def wait_for_services(self) -> None:
