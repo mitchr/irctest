@@ -92,8 +92,8 @@ class GossipController(BaseServerController, DirectoryBasedController):
         bind_address = "127.0.0.1:%s" % (port,)
         listener_conf = None  # plaintext
         if ssl:
-            self.key_path = os.path.join(self.directory, "ssl.key")
-            self.pem_path = os.path.join(self.directory, "ssl.pem")
+            self.key_path = self.directory / "ssl.key"
+            self.pem_path = self.directory / "ssl.pem"
             config["tls"]["enabled"] = True
             config["tls"]["pubkey"] = self.pem_path
             config["tls"]["privkey"] = self.key_path
@@ -108,7 +108,7 @@ class GossipController(BaseServerController, DirectoryBasedController):
             # password
             config["password"] = "JDJhJDEyJFVTVFMvb01IRWMvUGx5M29BZ00wYWVHREMuSjlWSUx2TkVWOEV2akVyVEw3enRmc1JRbjgu"
 
-        self._config_path = os.path.join(self.directory, "config.json")
+        self._config_path = self.directory / "config.json"
         self._config = config
         self._write_config()
 
